@@ -16,6 +16,7 @@ class Player(pygame.sprite.Sprite): #must inherit sprite class from pygame
         self.image = self.animations[self.status][self.frame_index]
 
         self.rect = self.image.get_rect(center = pos)
+        self.z = LAYERS['main'] #[x,y,z] position where z is depth for 3 dimension
 
         #movement attributes
         self.direction = pygame.math.Vector2() #[x,y]
@@ -23,15 +24,28 @@ class Player(pygame.sprite.Sprite): #must inherit sprite class from pygame
         self.speed = 200
 
         #tools
-        self.selected_tool = 'water'
+        self.tools = ['hoe','axe','water']
+        self.tool_index = 0
+        self.selected_tool = self.tools[self.tool_index]
+
+        #seed
+        self.seeds = ['corn','tomato']
+        self.seed_index = 0
+        self.selected_seed = self.seeds[self.seed_index]
 
         # timers
         self.timers = {
-            'tool use': Timer(350, self.use_tool())
+            'tool use': Timer(350, self.use_tool()),
+            'tool switch': Timer(200), #we dont want to call another function after
+            'seed use': Timer(350,self.use_seed()),
+            'seed switch': Timer(200)
         }
 
     def use_tool(self):
         print(self.selected_tool)
+
+    def use_seed(self):
+        print(self.selected_seed)
 
     def import_assets(self):
         self.animations = { 'up':[],'down':[],'left':[],'right':[],
@@ -48,7 +62,7 @@ class Player(pygame.sprite.Sprite): #must inherit sprite class from pygame
 
     def animate(self,dt):
         self.frame_index +=4 * dt
-        #print('this is frame_index = '+str(int(self.frame_index)j))
+        #('this is frame_index = '+str(int(self.frame_index)))
         if self.frame_index >= len(self.animations[self.status]):
             self.frame_index = 0
         self.image = self.animations[self.status][int(self.frame_index)]
@@ -80,6 +94,35 @@ class Player(pygame.sprite.Sprite): #must inherit sprite class from pygame
                 self.timers['tool use'].activate() #activate the tool use timer
                 self.direction = pygame.math.Vector2() #stop player from moving
                 self.frame_index=0 #reset
+
+            #change tool
+            if keys[pygame.K_q] and not self.timers['tool switch'].active: #tool switch timer can't be active
+                self.timers['tool switch'].activate()
+                self.tool_index+=1
+                # if self.tool_index >= len(self.selected_tool):
+                #     self.tool_index=0 #same thing as below
+                self.tool_index = self.tool_index if self.tool_index < len(self.tools) else 0
+                self.selected_tool = self.tools[self.tool_index]
+                #print('The tool selected is {}'.format(self.selected_tool[self.tool_index]))
+                print(self.selected_tool)
+
+            #seed use
+            if keys[pygame.K_LCTRL]:
+                self.timers['seed use'].activate() #set time for see use
+                self.direction = pygame.math.Vector2() #stop player from moving
+                self.frame_index = 0 #reset the frame index to 0 for full animation
+                print('use seed ') #no animation for seed yet so this print function will do for now
+
+            #change seed
+            if keys[pygame.K_e] and not self.timers['seed switch'].active:
+                self.timers['seed switch'].activate()
+                self.seed_index+=1
+                self.seed_index = self.seed_index if self.seed_index < len(self.seeds) else 0
+                #print('the index is {}'.format(self.seed_index))
+                self.selected_seed = self.seeds[self.seed_index]
+                print(self.selected_seed)
+
+
 
     def get_status(self):
         #idle use
